@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f2ec;--surface:#fff;--surface2:#faf8f4;--border:#e2ddd6;--accent:#2d5016;--accent2:#4a7c2f;--gold:#c8a951;--danger:#c0392b;--text:#1a1a1a;--muted:#7a7468;--shadow:0 2px 16px rgba(0,0,0,.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+#setup-banner{background:#fff3cd;border-bottom:2px solid #c8a951;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+#setup-banner.hidden{display:none}
+#setup-banner p{font-size:.88rem;color:#5a4500;font-weight:500}
+#setup-banner input{padding:8px 14px;border:1px solid #c8a951;border-radius:6px;font-size:.88rem;width:420px;max-width:100%}
+#setup-banner button{padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.88rem}
+header{background:var(--accent);color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.2)}
+header h1{font-family:'Playfair Display',serif;font-size:1.5rem}
+.header-right{display:flex;align-items:center;gap:16px}
+.sync-status{font-size:.78rem;opacity:.8;display:flex;align-items:center;gap:6px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block}
+.sync-dot.ok{background:#69f0ae}.sync-dot.loading{background:var(--gold);animation:pulse 1s infinite}.sync-dot.err{background:#ff5252}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.tabs{display:flex;background:var(--accent);border-top:1px solid rgba(255,255,255,.1);padding:0 32px;overflow-x:auto}
+.tab-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:12px 20px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+.tab-btn.active{color:#fff;border-bottom-color:var(--gold)}.tab-btn:hover{color:#fff}
+.container{max-width:1200px;margin:0 auto;padding:28px 20px}
+.tab-content{display:none}.tab-content.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px}
+.card-title{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:18px;color:var(--accent);display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:inline-block;width:4px;height:18px;background:var(--gold);border-radius:2px}
+.form-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.form-group{flex:1;min-width:180px}
+.form-group label{display:block;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.92rem;background:var(--surface2);color:var(--text);transition:border-color .2s;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent2);background:#fff}
+.btn{padding:10px 22px;border:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:#1a1a1a}.btn-gold:hover{background:#b8952f}
+.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 12px;font-size:.8rem;border-radius:6px}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-blue{background:#1565c0;color:#fff;padding:6px 14px;font-size:.8rem;border-radius:6px}
+.btn-blue:hover{background:#0d47a1}
+.btn-sm{padding:6px 14px;font-size:.8rem}.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{background:var(--surface2);padding:10px 14px;text-align:left;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:2px solid var(--border)}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
+tr.cancelled td{opacity:.45;text-decoration:line-through}tr.cancelled td:last-child{text-decoration:none}
+tr.exp-high td{background:#ffebee!important}tr.exp-near td{background:#fff8e1!important}
+tr.exp-high:hover td{background:#ffcdd2!important}tr.exp-near:hover td{background:#fff3cd!important}
+tr.alloc-complete td{background:#e8f5e9!important}tr.alloc-partial td{background:#e3f2fd!important}tr.alloc-pending td{background:#fff8e1!important}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+.badge-ok{background:#e8f5e9;color:#2e7d32}.badge-low{background:#fff3e0;color:#e65100}
+.badge-out{background:#ffebee;color:#c62828}.badge-cancelled{background:#fce4ec;color:#880e4f}
+.badge-active{background:#e8f5e9;color:#1b5e20}
+.badge-exp-high{background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a}
+.badge-exp-near{background:#fff8e1;color:#e65100;border:1px solid #ffcc80}
+.badge-pending{background:#fff8e1;color:#e65100;border:1px solid #ffcc80}
+.badge-partial{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+.badge-complete{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
+.badge-draft{background:#f5f5f5;color:#616161;border:1px solid #e0e0e0}
+.badge-archived{background:#fce4ec;color:#880e4f}
+.stats-row{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.stat-box{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow)}
+.stat-box .num{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;color:var(--accent)}
+.stat-box .lbl{font-size:.78rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.dispatch-item{display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+.dispatch-item select,.dispatch-item input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;background:#fff}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:.88rem;font-weight:500;display:none}
+.alert.show{display:block}
+.alert-success{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+.alert-error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+.alert-info{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+.filter-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+.filter-row .form-group{min-width:140px;margin-bottom:0}
+.tag-inst{background:#e8f0fe;color:#1a56db;font-size:.75rem;padding:2px 8px;border-radius:12px;font-weight:500}
+.empty-msg{text-align:center;color:var(--muted);padding:30px;font-style:italic}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);align-items:center;justify-content:center;z-index:9999;display:none}
+.loading-overlay.show{display:flex}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.section-divider{border:none;border-top:1px dashed var(--border);margin:18px 0}
+.combo-wrap{position:relative}
+.combo-wrap input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.92rem;background:var(--surface2);color:var(--text);outline:none}
+.combo-wrap input:focus{border-color:var(--accent2);background:#fff}
+.combo-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:200;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.combo-dropdown.open{display:block}
+.combo-option{padding:9px 14px;cursor:pointer;font-size:.9rem}
+.combo-option:hover{background:var(--surface2)}
+.combo-option.new-tag{color:var(--accent2);font-style:italic}
+.recv-suggestions{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;max-height:180px;overflow-y:auto;z-index:200;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.recv-suggestions.open{display:block}
+.recv-option{padding:9px 14px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--border)}
+.recv-option:hover{background:var(--surface2)}
+.recv-option small{display:block;color:var(--muted);font-size:.75rem}
+.import-area{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .2s}
+.import-area:hover,.import-area.drag{border-color:var(--accent2);background:#f0f7f0}
+.import-area p{color:var(--muted);font-size:.9rem;margin-top:8px}
+.ledger-table{width:100%;border-collapse:collapse;font-size:.88rem}
+.ledger-table th{background:#2d5016;color:#fff;padding:9px 12px;text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border:1px solid #1a3a0a}
+.ledger-table td{padding:10px 12px;border:1px solid var(--border);vertical-align:middle}
+.ledger-table tr.opening td{background:#e8f5e9;font-weight:600}
+.ledger-table tr.writeoff td{background:#fff8f0}
+.ledger-table tr.cancelled-row td{opacity:.55;text-decoration:line-through}
+.ledger-table tr.cancelled-row td:last-child{text-decoration:none}
+.ledger-balance{font-family:'DM Mono',monospace;font-weight:700;text-align:right}
+.ledger-issue{color:#c0392b;font-weight:600}
+.ledger-writeoff{color:#e65100;font-weight:600}
+/* DISTRIBUTION CENTRE */
+.dc-page{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+.dc-inner-tabs{display:flex;background:var(--surface2);border-bottom:1px solid var(--border);overflow-x:auto}
+.dc-tab-btn{background:none;border:none;border-bottom:3px solid transparent;padding:12px 20px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;color:var(--muted);white-space:nowrap;transition:all .2s}
+.dc-tab-btn.active{color:var(--accent);border-bottom-color:var(--gold);background:var(--surface)}
+.dc-tab-btn:hover{color:var(--accent)}
+.dc-tab-content{display:none;padding:24px}
+.dc-tab-content.active{display:block}
+.template-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px;transition:all .15s;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.template-card:hover{border-color:var(--accent2);background:#f0f7f0}
+.template-card.selected{border-color:var(--accent);background:#f0f7f0;box-shadow:0 0 0 2px rgba(45,80,22,.15)}
+.template-card-left h3{font-size:.95rem;font-weight:600;margin-bottom:4px}
+.template-card-left p{font-size:.78rem;color:var(--muted)}
+.progress-bar-wrap{background:#e0e0e0;border-radius:20px;height:6px;width:120px;overflow:hidden;margin-top:6px}
+.progress-bar{height:100%;border-radius:20px;background:var(--accent2);transition:width .3s}
+.progress-pct{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:600}
+@media print{
+  body *{visibility:hidden}
+  #voucher-print,#voucher-print *{visibility:visible}
+  #voucher-print{position:fixed;top:0;left:0;width:100%}
+  .ledger-table th{background:#2d5016!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ledger-table tr.opening td{background:#e8f5e9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+#voucher-print{display:none;font-family:'DM Sans',sans-serif}
+.voucher-box{max-width:720px;margin:0 auto;border:2px solid #333;padding:36px;background:#fff;color:#000}
+.voucher-org{text-align:center;margin-bottom:6px}
+.voucher-org h2{font-family:'Playfair Display',serif;font-size:1.5rem;letter-spacing:.02em}
+.voucher-title-bar{text-align:center;background:#2d5016;color:#fff;padding:8px 0;margin:14px 0 20px;font-weight:700;font-size:1rem;letter-spacing:.08em;text-transform:uppercase}
+.voucher-meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;font-size:.88rem}
+.voucher-meta-grid .vm-item strong{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#777;margin-bottom:2px}
+.voucher-meta-grid .vm-item span{font-weight:600}
+.voucher-table{width:100%;border-collapse:collapse;margin-bottom:24px}
+.voucher-table th{background:#f0f0f0;padding:9px 12px;text-align:left;border:1px solid #bbb;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+.voucher-table td{padding:9px 12px;border:1px solid #bbb;font-size:.9rem}
+.voucher-table tfoot td{font-weight:700;background:#f9f9f9}
+.voucher-footer{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:36px;font-size:.85rem}
+.voucher-footer .sig-block{text-align:center}
+.voucher-footer .sig-line{border-top:1px solid #333;margin:0 auto 6px;width:180px}
+.voucher-footer .sig-name{font-weight:700;font-size:.9rem}
+.voucher-footer .sig-label{font-size:.75rem;color:#666;margin-top:2px}
+.voucher-remarks{background:#f9f9f9;border-left:3px solid #2d5016;padding:8px 12px;margin-bottom:18px;font-size:.85rem}
+
+/* ALLOCATION GRID */
+.grid-tag{display:inline-flex;align-items:center;gap:5px;background:var(--accent);color:#fff;padding:4px 10px;border-radius:20px;font-size:.78rem;font-weight:600}
+.grid-tag button{background:none;border:none;color:#fff;cursor:pointer;font-size:.9rem;line-height:1;padding:0 2px;opacity:.8}
+.grid-tag button:hover{opacity:1}
+.grid-tag.item-tag{background:#1565c0}
+.alloc-grid-scroll{overflow-x:auto;max-width:100%}
+#alloc-grid-table{border-collapse:separate;border-spacing:0;min-width:600px}
+#alloc-grid-table th{background:#2d5016;color:#fff;padding:10px 12px;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;border-right:1px solid #1a3a0a;border-bottom:2px solid #1a3a0a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#alloc-grid-table th.inst-col{background:#1565c0;min-width:110px}
+#alloc-grid-table th.stock-col{background:#37474f;min-width:90px}
+#alloc-grid-table th.distrib-col{background:#6a1b9a;min-width:90px}
+#alloc-grid-table th.bal-col{background:#c0392b;min-width:90px;position:sticky;right:0;z-index:9;box-shadow:-2px 0 4px rgba(0,0,0,.12)}
+/* Sticky left columns */
+#alloc-grid-table th:nth-child(1),#alloc-grid-table td:nth-child(1){
+position:sticky;left:0;z-index:6;min-width:130px;max-width:130px
+}
+#alloc-grid-table th:nth-child(2),#alloc-grid-table td:nth-child(2){
+position:sticky;left:130px;z-index:6;min-width:70px;max-width:70px
+}
+#alloc-grid-table th:nth-child(3),#alloc-grid-table td:nth-child(3){
+position:sticky;left:200px;z-index:6;min-width:95px;max-width:95px
+}
+#alloc-grid-table th:nth-child(4),#alloc-grid-table td:nth-child(4){
+position:sticky;left:295px;z-index:6;min-width:95px;max-width:95px
+}
+#alloc-grid-table th:nth-child(1),#alloc-grid-table th:nth-child(2),#alloc-grid-table th:nth-child(3),#alloc-grid-table th:nth-child(4){
+z-index:8
+}
+#alloc-grid-table td:nth-child(1){background:#eceff1;box-shadow:2px 0 4px rgba(0,0,0,.08)}
+#alloc-grid-table td:nth-child(2){background:#f5f5f5;box-shadow:2px 0 4px rgba(0,0,0,.08)}
+#alloc-grid-table td:nth-child(3){background:#eceff1;box-shadow:2px 0 4px rgba(0,0,0,.08)}
+#alloc-grid-table td:nth-child(4){background:#f3e5f5;box-shadow:2px 0 4px rgba(0,0,0,.08)}
+#alloc-grid-table th:nth-child(1){background:#37474f}
+#alloc-grid-table th:nth-child(2){background:#2d5016}
+#alloc-grid-table th:nth-child(3){background:#37474f}
+#alloc-grid-table th:nth-child(4){background:#6a1b9a}
+#alloc-grid-table td{padding:8px 10px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle}
+#alloc-grid-table td.item-cell{font-weight:600;font-size:.85rem;min-width:120px;white-space:nowrap}
+#alloc-grid-table td.bal-cell{font-family:'DM Mono',monospace;font-weight:700;text-align:right;position:sticky;right:0;z-index:7;box-shadow:-2px 0 4px rgba(0,0,0,.08)}
+#alloc-grid-table td.bal-cell.ok{background:#e8f5e9;color:#2e7d32}
+#alloc-grid-table td.bal-cell.warn{background:#fff8e1;color:#e65100}
+#alloc-grid-table td.bal-cell.over{background:#ffebee;color:#c62828}
+#alloc-grid-table td.stock-cell{font-family:'DM Mono',monospace;font-weight:700;text-align:right;color:#37474f}
+#alloc-grid-table td.distrib-cell{background:#f3e5f5}
+#alloc-grid-table input.grid-input{width:80px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-family:'DM Mono',monospace;font-size:.88rem;text-align:right;background:#fff}
+#alloc-grid-table input.grid-input:focus{outline:none;border-color:var(--accent2);background:#f0f7f0}
+#alloc-grid-table input.grid-input.equal-applied{background:#e8f5e9;border-color:var(--accent2)}
+#alloc-grid-table input.grid-input.manual{background:#fff;border-color:var(--border)}
+#alloc-grid-table tfoot td{background:var(--surface2);font-weight:600;font-size:.82rem;padding:8px 10px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+#alloc-grid-table tfoot td:last-child{position:sticky;right:0;z-index:2}
+.eq-check{accent-color:var(--accent2);width:15px;height:15px;cursor:pointer}
+
+
+/* AUDIT */
+.audit-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-radius:8px;margin-bottom:8px;border:1px solid var(--border)}
+.audit-row.pass{background:#e8f5e9;border-color:#a5d6a7}
+.audit-row.warn{background:#fff8e1;border-color:#ffcc80}
+.audit-row.fail{background:#ffebee;border-color:#ef9a9a}
+.audit-icon{font-size:1.2rem;line-height:1;margin-top:2px;flex-shrink:0}
+.audit-title{font-weight:600;font-size:.9rem;margin-bottom:2px}
+.audit-detail{font-size:.8rem;color:var(--muted)}
+.audit-fail-detail{font-size:.8rem;color:#c62828}
+
+
+/* RECORDS VOUCHER GROUPING */
+tr.vgrp-a td{background:#f0f7f0!important}
+tr.vgrp-b td{background:#e8f0fe!important}
+tr.vgrp-a:hover td{background:#e0f0e0!important}
+tr.vgrp-b:hover td{background:#d8e8fe!important}
+tr.vgrp-a.cancelled td,tr.vgrp-b.cancelled td{opacity:.45}
+tr.vgrp-first td{border-top:2px solid #bbb!important}
+
+
+/* PRINT LABELS */
+.label-select-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.88rem}
+.label-select-row input[type=checkbox]{accent-color:var(--accent2);width:15px;height:15px}
+@media print{
+  .label-grid{display:grid!important}
+  .no-print{display:none!important}
+}
+
+
+/* COLLAPSIBLE VOUCHER ROWS */
+.voucher-header-row td{padding:0!important;border-bottom:1px solid var(--border)}
+.voucher-header-row:hover>td{background:rgba(0,0,0,.03)}
+.voucher-header-row.vgrp-a>td{background:#f0f7f0}
+.voucher-header-row.vgrp-b>td{background:#e8f0fe}
+.voucher-header-row.cancelled>td{opacity:.6}
+.voucher-detail-row.vgrp-a td{background:#f8fcf8}
+.voucher-detail-row.vgrp-b td{background:#f3f7fe}
+
+</style>
+</head>
+<body>
+
+<div id="setup-banner">
+  <p>⚙️ Paste your Google Apps Script Web App URL to connect:</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/YOUR_ID/exec">
+    <button onclick="saveScriptUrl()">Connect & Save</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <h1 id="header-title">Inventory Manager</h1>
+    <span style="font-size:.75rem;opacity:.55;font-weight:300">Google Sheets Powered</span>
+  </div>
+  <div class="header-right">
+    <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Not connected</span></div>
+    <div id="audit-badge" onclick="openAuditFromBadge()" title="System Audit" style="cursor:pointer;display:none;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:5px"><span id="audit-badge-icon">✅</span><span id="audit-badge-label">Audit OK</span></div>
+    <div style="font-family:'DM Mono',monospace;font-size:.75rem;opacity:.65" id="clock"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('dashboard',this)">Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('stock',this)">Stock</button>
+  <button class="tab-btn" onclick="switchTab('institutes',this)">Institutes</button>
+  <button class="tab-btn" onclick="switchTab('dispatch',this)">Dispatch Items</button>
+  <button class="tab-btn" onclick="switchTab('records',this)">Records</button>
+  <button class="tab-btn" onclick="switchTab('reports',this)">Reports</button>
+  <button class="tab-btn" onclick="switchTab('adjustments',this)">Stock Adjustments</button>
+  <button class="tab-btn" onclick="switchTab('expired',this)">⛔ Expired Stock</button>
+  <button class="tab-btn" onclick="switchTab('distribution',this)">📋 Distribution Centre</button>
+  <button class="tab-btn" onclick="switchTab('audit',this)">🔍 Audit</button>
+  <button class="tab-btn" onclick="switchTab('settings',this)">⚙ Settings</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-content active">
+  <div class="container">
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box"><div class="num">—</div><div class="lbl">Item Types</div></div>
+      <div class="stat-box"><div class="num">—</div><div class="lbl">Low Stock Items</div></div>
+      <div class="stat-box"><div class="num">—</div><div class="lbl">Institutes</div></div>
+      <div class="stat-box"><div class="num">—</div><div class="lbl">Active Dispatches</div></div>
+    </div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div class="card" style="flex:2;min-width:300px">
+        <div class="card-title">Recent Dispatches</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Date</th><th>Voucher</th><th>Institute</th><th>Status</th><th>Print</th></tr></thead>
+          <tbody id="dash-recent-body"><tr><td colspan="5" class="empty-msg">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+      <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:16px">
+        <div class="card"><div class="card-title">Low Stock</div><div id="low-stock-list"><p class="empty-msg">Loading...</p></div></div>
+        <div class="card"><div class="card-title">Expiry Alerts</div><div id="expiry-alert-list"><p class="empty-msg">Loading...</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STOCK -->
+<div id="tab-stock" class="tab-content">
+  <div class="container">
+    <div class="card" id="stock-import-card">
+      <div class="card-title">Bulk Import Items (CSV)</div>
+      <div class="import-area" id="import-drop" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+        <div style="font-size:2rem">📂</div>
+        <div style="font-weight:600;margin-top:8px">Click or drag & drop CSV file</div>
+        <p>Columns: <strong>name, category, unit, quantity, low_stock, expiry_date</strong> — <a href="#" onclick="downloadTemplate(event)" style="color:var(--accent2)">Download template</a></p>
+      </div>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileImport(this)">
+      <div id="import-preview" style="margin-top:16px;display:none">
+        <div id="import-table-wrap" class="table-wrap"></div>
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" onclick="confirmImport()">✓ Import All</button>
+          <button class="btn" style="background:var(--surface2);border:1px solid var(--border)" onclick="cancelImport()">Cancel</button>
+          <span id="import-count" style="font-size:.85rem;color:var(--muted)"></span>
+        </div>
+      </div>
+      <div id="import-alert" class="alert" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Add New Item</div>
+      <div id="stock-alert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Item Name</label><div class="combo-wrap"><input type="text" id="item-name" placeholder="Type or pick..." autocomplete="off" oninput="comboFilter('name')" onfocus="comboOpen('name')" onblur="comboBlur('name')"><div class="combo-dropdown" id="combo-name-dd"></div></div></div>
+        <div class="form-group"><label>Category</label><div class="combo-wrap"><input type="text" id="item-cat" placeholder="Type or pick..." autocomplete="off" oninput="comboFilter('cat')" onfocus="comboOpen('cat')" onblur="comboBlur('cat')"><div class="combo-dropdown" id="combo-cat-dd"></div></div></div>
+        <div class="form-group"><label>Unit</label><div class="combo-wrap"><input type="text" id="item-unit" placeholder="Type or pick..." autocomplete="off" oninput="comboFilter('unit')" onfocus="comboOpen('unit')" onblur="comboBlur('unit')"><div class="combo-dropdown" id="combo-unit-dd"></div></div></div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="item-qty" placeholder="0" min="0"></div>
+        <div class="form-group"><label>Low Stock Alert at</label><input type="number" id="item-low" placeholder="10" min="0"></div>
+        <div class="form-group"><label>Expiry Date</label><input type="date" id="item-expiry"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Batch / Serial Number Type</label>
+          <select id="item-serial-type">
+            <option value="">None</option>
+            <option value="Batch Number">Batch Number (medicines)</option>
+            <option value="Serial Number">Serial Number (equipment)</option>
+          </select>
+        </div>
+        <div class="form-group" id="item-serial-wrap">
+          <label>Batch / Serial Number <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:.75rem">(optional)</span></label>
+          <input type="text" id="item-serial-value" placeholder="e.g. BN-2024-001 or leave blank">
+        </div>
+        <div class="form-group">
+          <label>Reference / Invoice Number <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:.75rem">(optional)</span></label>
+          <input type="text" id="item-ref-number" placeholder="e.g. INV-2024-055, GRN-001">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <input type="checkbox" id="item-show-low" checked style="width:16px;height:16px;accent-color:var(--accent)">
+        <label for="item-show-low" style="font-size:.88rem;cursor:pointer">Show in Low Stock alerts on Dashboard</label>
+      </div>
+      <button class="btn btn-primary" onclick="addItem()">Add to Stock</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Remove / Write-off Stock</div>
+      <div id="remove-alert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Item</label><select id="remove-item-id"><option value="">— Select Item —</option></select></div>
+        <div class="form-group"><label>Quantity to Remove</label><input type="number" id="remove-qty" placeholder="0" min="1"></div>
+        <div class="form-group"><label>Date</label><input type="date" id="remove-date"></div>
+        <div class="form-group"><label>Reason</label><select id="remove-reason"><option>Expired</option><option>Damaged / Broken</option><option>Lost / Missing</option><option>Internal Use</option><option>Other</option></select></div>
+        <div class="form-group" style="flex:2"><label>Remarks</label><input type="text" id="remove-remarks" placeholder="Additional notes..."></div>
+      </div>
+      <button class="btn btn-danger" style="padding:10px 22px;font-size:.9rem" onclick="removeStock()">Remove from Stock</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span>Current Stock</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+            <button id="view-summary-btn" class="btn btn-sm" onclick="setStockView('summary')" style="background:var(--accent);color:#fff;border-radius:0;padding:6px 12px;font-size:.78rem">Summary</button>
+            <button id="view-detail-btn" class="btn btn-sm" onclick="setStockView('detail')" style="background:var(--surface2);border-radius:0;padding:6px 12px;font-size:.78rem;border-left:1px solid var(--border)">Detailed</button>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="printStock()">🖨 Print</button>
+          <button class="btn btn-sm" style="background:#6a1b9a;color:#fff" onclick="printLabels()">🏷 Labels</button>
+          <button class="btn btn-sm" style="background:#1565c0;color:#fff" onclick="downloadStockCSV()">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Unit</th><th>Qty</th><th>Batch/Serial</th><th>Ref No.</th><th>Expiry</th><th>Alert</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="stock-tbody"><tr><td colspan="9" class="empty-msg">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INSTITUTES -->
+<div id="tab-institutes" class="tab-content">
+  <div class="container">
+    <div class="card" id="inst-import-card">
+      <div class="card-title">Bulk Import Institutes (CSV)</div>
+      <div class="import-area" id="inst-import-drop" onclick="document.getElementById('inst-csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleInstDrop(event)">
+        <div style="font-size:2rem">📂</div>
+        <div style="font-weight:600;margin-top:8px">Click or drag & drop CSV file</div>
+        <p>Columns: <strong>name, category, contact, phone, address</strong> — <a href="#" onclick="downloadInstTemplate(event)" style="color:var(--accent2)">Download template</a></p>
+      </div>
+      <input type="file" id="inst-csv-file" accept=".csv" style="display:none" onchange="handleInstFileImport(this)">
+      <div id="inst-import-preview" style="margin-top:16px;display:none">
+        <div id="inst-import-table-wrap" class="table-wrap"></div>
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary" onclick="confirmInstImport()">✓ Import All</button>
+          <button class="btn" style="background:var(--surface2);border:1px solid var(--border)" onclick="cancelInstImport()">Cancel</button>
+          <span id="inst-import-count" style="font-size:.85rem;color:var(--muted)"></span>
+        </div>
+      </div>
+      <div id="inst-import-alert" class="alert" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add Institute</div>
+      <div id="inst-alert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Institute Name</label><input type="text" id="inst-name" placeholder="e.g. Government School Ludhiana"></div>
+        <div class="form-group"><label>Category</label>
+          <div class="combo-wrap"><input type="text" id="inst-category" placeholder="e.g. School, PHC, Hospital..." autocomplete="off" oninput="instCatFilter()" onfocus="instCatOpen()" onblur="instCatBlur()"><div class="combo-dropdown" id="combo-instcat-dd"></div></div>
+        </div>
+        <div class="form-group"><label>Contact Person</label><input type="text" id="inst-contact" placeholder="Name"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="inst-phone" placeholder="+91-XXXXX"></div>
+        <div class="form-group" style="flex:2"><label>Address</label><input type="text" id="inst-address" placeholder="Full address"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addInstitute()">Add Institute</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Institutes List</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Institute</th><th>Category</th><th>Contact</th><th>Phone</th><th>Address</th><th>Dispatches</th><th>Actions</th></tr></thead>
+        <tbody id="inst-tbody"><tr><td colspan="7" class="empty-msg">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISPATCH -->
+<div id="tab-dispatch" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">Issue Items to Institute</div>
+      <div id="dispatch-alert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Voucher Number *</label><input type="text" id="disp-voucher" placeholder="e.g. V-2025-001"></div>
+        <div class="form-group"><label>Date *</label><input type="date" id="disp-date"></div>
+        <div class="form-group">
+          <label>Institute *</label>
+          <div style="position:relative">
+            <input type="text" id="disp-inst-search" placeholder="Search institute..." autocomplete="off" oninput="instSearch()" onfocus="instSearchOpen()" onblur="instSearchBlur()">
+            <div id="disp-inst-dd" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:200;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+          </div>
+          <input type="hidden" id="disp-inst-id">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="position:relative">
+          <label>Received By (Name) *</label>
+          <input type="text" id="disp-received-name" placeholder="Person receiving items" autocomplete="off" oninput="receiverSearch()" onfocus="receiverSearchOpen()" onblur="receiverSearchBlur()">
+          <div class="recv-suggestions" id="recv-dd"></div>
+        </div>
+        <div class="form-group"><label>Received By (Phone)</label><input type="text" id="disp-received-phone" placeholder="+91-XXXXX"></div>
+        <div class="form-group" style="flex:2"><label>Purpose / Remarks</label><input type="text" id="disp-remarks" placeholder="e.g. Annual distribution"></div>
+      </div>
+      <hr class="section-divider">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <label style="font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Items to Dispatch</label>
+        <button class="btn btn-gold btn-sm" onclick="addDispatchRow()">+ Add Item</button>
+      </div>
+      <div id="dispatch-rows"></div>
+      <div style="margin-top:16px"><button class="btn btn-primary" id="dispatch-btn" onclick="submitDispatch()">✓ Issue & Print Voucher</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECORDS -->
+<div id="tab-records" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">All Dispatch Records</div>
+      <div id="records-alert" class="alert"></div>
+      <div class="filter-row">
+        <div class="form-group"><label>Institute</label><select id="filter-inst" onchange="renderRecords()"><option value="">All</option></select></div>
+        <div class="form-group"><label>Item</label><select id="filter-item" onchange="renderRecords()"><option value="">All</option></select></div>
+        <div class="form-group"><label>From Date</label><input type="date" id="filter-from" onchange="renderRecords()"></div>
+        <div class="form-group"><label>To Date</label><input type="date" id="filter-to" onchange="renderRecords()"></div>
+        <div class="form-group"><label>Status</label><select id="filter-status" onchange="renderRecords()"><option value="">All</option><option value="active">Active</option><option value="cancelled">Cancelled</option></select></div>
+        <button class="btn btn-gold btn-sm" style="height:38px;margin-top:auto" onclick="clearFilters()">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th colspan="8" style="background:var(--surface2);color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;border-bottom:2px solid var(--border)">Click a voucher row to expand items</th></tr></thead>
+        <tbody id="records-tbody"><tr><td colspan="8" class="empty-msg">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div id="tab-reports" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">Item-wise Stock Ledger</div>
+      <div class="filter-row" style="margin-bottom:14px">
+        <div class="form-group" style="min-width:200px"><label>Select Item</label><select id="ledger-item-select" onchange="renderLedger()"><option value="">— Select an item —</option></select></div>
+        <div class="form-group"><label>From Date</label><input type="date" id="ledger-from" onchange="renderLedger()"></div>
+        <div class="form-group"><label>To Date</label><input type="date" id="ledger-to" onchange="renderLedger()"></div>
+        <button class="btn btn-gold btn-sm" style="height:38px;margin-top:auto" onclick="printLedger()">🖨 Print Ledger</button>
+      </div>
+      <div id="ledger-wrap"><p class="empty-msg">Select an item above to view its complete ledger.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Institute-wise Summary</div>
+      <div class="table-wrap"><table><thead><tr><th>Institute</th><th>Active Dispatches</th><th>Total Qty Received</th></tr></thead><tbody id="inst-summary-body"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADJUSTMENTS -->
+<div id="tab-adjustments" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">Stock Removal / Write-off Log</div>
+      <div class="filter-row">
+        <div class="form-group"><label>Item</label><select id="adj-filter-item" onchange="renderAdjustments()"><option value="">All Items</option></select></div>
+        <div class="form-group"><label>Reason</label><select id="adj-filter-reason" onchange="renderAdjustments()"><option value="">All</option><option>Expired</option><option>Damaged / Broken</option><option>Lost / Missing</option><option>Internal Use</option><option>Other</option></select></div>
+        <div class="form-group"><label>From Date</label><input type="date" id="adj-from" onchange="renderAdjustments()"></div>
+        <div class="form-group"><label>To Date</label><input type="date" id="adj-to" onchange="renderAdjustments()"></div>
+        <button class="btn btn-gold btn-sm" style="height:38px;margin-top:auto" onclick="clearAdjFilters()">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date</th><th>Item</th><th>Qty Removed</th><th>Reason</th><th>Remarks</th><th>Stock After</th></tr></thead>
+        <tbody id="adj-tbody"><tr><td colspan="6" class="empty-msg">No adjustments recorded yet.</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- EXPIRED STOCK -->
+<div id="tab-expired" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title" style="color:var(--danger)">⛔ Expired Stock</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Items whose expiry date has passed. These are excluded from Current Stock and Dispatch. No write-off action required — they are tracked here for reference.</p>
+      <div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Unit</th><th>Qty</th><th>Batch/Serial</th><th>Expiry Date</th><th>Days Expired</th></tr></thead>
+        <tbody id="expired-tbody"><tr><td colspan="8" class="empty-msg">Loading...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISTRIBUTION CENTRE -->
+<div id="tab-distribution" class="tab-content">
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-box"><div class="num" id="dc-stat-templates">0</div><div class="lbl">Active Templates</div></div>
+      <div class="stat-box" style="cursor:pointer" onclick="filterDCByStatus('done')"><div class="num" id="dc-stat-complete" style="color:var(--accent2)">0</div><div class="lbl">Fully Dispatched</div></div>
+      <div class="stat-box" style="cursor:pointer" onclick="filterDCByStatus('partial')"><div class="num" id="dc-stat-partial" style="color:#1565c0">0</div><div class="lbl">Partially Done</div></div>
+      <div class="stat-box" style="cursor:pointer" onclick="filterDCByStatus('pending')"><div class="num" id="dc-stat-pending" style="color:var(--danger)">0</div><div class="lbl">Not Started</div></div>
+    </div>
+    <!-- CALL LIST -->
+    <div id="dc-call-list" style="display:none;margin-bottom:16px"></div>
+    <div class="dc-page">
+      <div class="dc-inner-tabs">
+        <button class="dc-tab-btn active" onclick="dcSwitchTab('manager',this)">📁 Template Manager</button>
+        <button class="dc-tab-btn" onclick="dcSwitchTab('workspace',this)">✏️ Allocation Workspace</button>
+        <button class="dc-tab-btn" onclick="dcSwitchTab('progress',this)">📊 Progress Dashboard</button>
+        <button class="dc-tab-btn" onclick="dcSwitchTab('instview',this)">🏫 Institute View</button>
+        <button class="dc-tab-btn" onclick="dcSwitchTab('export',this)">⬇️ Export</button>
+      </div>
+
+      <!-- TEMPLATE MANAGER -->
+      <div id="dc-tab-manager" class="dc-tab-content active">
+        <div id="dc-manager-alert" class="alert"></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px">
+          <div style="font-weight:600;margin-bottom:14px;font-size:.95rem">Create New Template</div>
+          <div class="form-row">
+            <div class="form-group"><label>Template Name *</label><input type="text" id="tpl-name" placeholder="e.g. Deworming Campaign 2025"></div>
+            <div class="form-group"><label>Purpose</label><input type="text" id="tpl-purpose" placeholder="e.g. School Health Program"></div>
+            <div class="form-group"><label>Target Date</label><input type="date" id="tpl-date"></div>
+            <div class="form-group"><label>Status</label><select id="tpl-status"><option value="Draft">Draft</option><option value="Active">Active</option></select></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="createTemplate()">+ Create Template</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="tpl-search" placeholder="Search templates..." style="padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;flex:1;min-width:200px;outline:none;background:var(--surface2)" oninput="renderTemplateList()">
+          <select id="tpl-filter-status" onchange="renderTemplateList()" style="padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;background:var(--surface2)">
+            <option value="">All Status</option><option>Draft</option><option>Active</option><option>Completed</option><option>Archived</option>
+          </select>
+        </div>
+        <div id="template-list"><p class="empty-msg">No templates yet. Create one above.</p></div>
+      </div>
+
+      <!-- ALLOCATION WORKSPACE -->
+      <div id="dc-tab-workspace" class="dc-tab-content">
+        <div id="dc-workspace-alert" class="alert"></div>
+        <div id="dc-workspace-empty" style="text-align:center;padding:40px;color:var(--muted)">
+          <div style="font-size:2rem;margin-bottom:10px">📋</div>
+          <div style="font-weight:600">Select a template from Template Manager to start allocating</div>
+          <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="dcSwitchTab('manager',document.querySelectorAll('.dc-tab-btn')[0])">Go to Template Manager</button>
+        </div>
+        <div id="dc-workspace-content" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div>
+              <h3 id="ws-template-name" style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--accent)"></h3>
+              <p id="ws-template-meta" style="font-size:.8rem;color:var(--muted);margin-top:2px"></p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="dcSwitchTab('progress',document.querySelectorAll('.dc-tab-btn')[2])">View Progress →</button>
+            </div>
+          </div>
+          <!-- STEP 1: SELECT INSTITUTES -->
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:10px">Step 1 — Select Institutes</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <div style="position:relative;flex:1;min-width:200px">
+                <input type="text" id="grid-inst-search" placeholder="Search and add institutes..." autocomplete="off"
+                  oninput="gridInstSearch()" onfocus="gridInstSearchOpen()" onblur="gridInstSearchBlur()"
+                  style="width:100%;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;background:#fff;outline:none">
+                <div id="grid-inst-dd" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:300;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+              </div>
+              <button class="btn btn-gold btn-sm" onclick="gridSelectAllInstitutes()">+ All Institutes</button>
+              <select id="grid-cat-filter" onchange="gridSelectByCategory()" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;background:var(--surface2)"><option value="">+ By Category</option></select>
+              <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border)" onclick="gridClearInstitutes()">Clear</button>
+            </div>
+            <div id="grid-inst-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"></div>
+          </div>
+
+          <!-- STEP 2: SELECT ITEMS -->
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:10px">Step 2 — Select Items</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <div style="position:relative;flex:1;min-width:200px">
+                <input type="text" id="grid-item-search" placeholder="Search and add items..." autocomplete="off"
+                  oninput="gridItemSearch()" onfocus="gridItemSearchOpen()" onblur="gridItemSearchBlur()"
+                  style="width:100%;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;background:#fff;outline:none">
+                <div id="grid-item-dd" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:300;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+              </div>
+              <button class="btn btn-gold btn-sm" onclick="gridSelectAllItems()">+ All Items</button>
+              <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border)" onclick="gridClearItems()">Clear</button>
+            </div>
+            <div id="grid-item-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"></div>
+          </div>
+
+          <!-- STEP 3: GRID -->
+          <div id="alloc-grid-wrap" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <div style="font-weight:600;font-size:.9rem;color:var(--accent)">Step 3 — Set Quantities</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary btn-sm" onclick="saveGridAllocations()" id="grid-save-btn">💾 Save Allocations</button>
+                <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border)" onclick="gridClearAll()">Clear All</button>
+              </div>
+            </div>
+            <div id="grid-alert" class="alert"></div>
+            <div class="alloc-grid-scroll">
+              <table id="alloc-grid-table">
+                <thead id="alloc-grid-head"></thead>
+                <tbody id="alloc-grid-body"></tbody>
+                <tfoot id="alloc-grid-foot"></tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- EXISTING ALLOCATIONS VIEW -->
+          <div style="margin-top:20px">
+            <div style="font-weight:600;font-size:.9rem;color:var(--accent);margin-bottom:10px;padding-top:16px;border-top:1px dashed var(--border)">Saved Allocations</div>
+            <div class="table-wrap">
+              <table><thead><tr><th>Institute</th><th>Item</th><th>Unit</th><th>Planned</th><th>Dispatched</th><th>Remaining</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="allocations-tbody"><tr><td colspan="8" class="empty-msg">No allocations in this template.</td></tr></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS DASHBOARD -->
+      <div id="dc-tab-progress" class="dc-tab-content">
+        <div style="margin-bottom:16px">
+          <select id="progress-template-select" onchange="renderProgressDashboard()" style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:.92rem;background:var(--surface2);min-width:260px">
+            <option value="">— Select Template —</option>
+          </select>
+        </div>
+        <div id="progress-content"><p class="empty-msg">Select a template above to view progress.</p></div>
+      </div>
+
+      <!-- INSTITUTE VIEW -->
+      <div id="dc-tab-instview" class="dc-tab-content">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <select id="instview-select" onchange="renderInstituteView()" style="padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:.92rem;background:var(--surface2);min-width:260px">
+            <option value="">— Select Institute —</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="dispatchSelectedTemplates()" id="multi-dispatch-btn" style="display:none">
+            → Dispatch Selected Templates
+          </button>
+        </div>
+        <div id="instview-content"><p class="empty-msg">Select an institute above.</p></div>
+      </div>
+
+      <!-- EXPORT -->
+      <div id="dc-tab-export" class="dc-tab-content">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+          <div class="card" style="margin-bottom:0">
+            <div style="font-weight:600;margin-bottom:8px">Export Selected Template</div>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Allocation details + balance summary</p>
+            <div class="form-group" style="margin-bottom:12px"><select id="export-tpl-select"><option value="">— Select Template —</option></select></div>
+            <button class="btn btn-primary btn-sm" onclick="exportTemplate()">⬇ Export CSV</button>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div style="font-weight:600;margin-bottom:8px">Export Institute Allocations</div>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">All allocations for one institute</p>
+            <div class="form-group" style="margin-bottom:12px"><select id="export-inst-select"><option value="">— Select Institute —</option></select></div>
+            <button class="btn btn-primary btn-sm" onclick="exportInstitute()">⬇ Export CSV</button>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div style="font-weight:600;margin-bottom:8px">Export All Templates</div>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Complete data for every template</p>
+            <button class="btn btn-primary btn-sm" onclick="exportAllTemplates()">⬇ Export CSV</button>
+          </div>
+          <div class="card" style="margin-bottom:0">
+            <div style="font-weight:600;margin-bottom:8px">Export All Allocations</div>
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">All allocations across all institutes</p>
+            <button class="btn btn-primary btn-sm" onclick="exportAllAllocations()">⬇ Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- AUDIT TAB -->
+<div id="tab-audit" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">🔍 System Self-Audit</div>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:16px">Checks data consistency across Stock, Records, Adjustments and Allocations. Read-only — never modifies data.</p>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-primary" onclick="runAudit()">▶ Run Audit Now</button>
+        <button class="btn btn-gold btn-sm" onclick="exportAuditCSV()">⬇ Export Report</button>
+        <span id="audit-last-run" style="font-size:.8rem;color:var(--muted)">Not run yet</span>
+      </div>
+      <div id="audit-alert" class="alert"></div>
+      <div id="audit-results">
+        <p class="empty-msg">Click "Run Audit Now" to check system integrity.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="tab-settings" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">System Settings</div>
+      <div id="settings-alert" class="alert"></div>
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label>System / Organization Name</label><input type="text" id="setting-sysname" placeholder="e.g. District Health Office Ludhiana"><p style="font-size:.75rem;color:var(--muted);margin-top:5px">Appears in header and on every printed voucher.</p></div>
+        <div class="form-group"><label>Issued By (Fixed on Voucher)</label><input type="text" id="setting-issuedby" placeholder="e.g. Dr. Harpreet Singh"></div>
+        <div class="form-group"><label>Script URL</label><input type="text" id="setting-scripturl" placeholder="https://script.google.com/..."></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Near Expiry Warning (days)</label><input type="number" id="setting-nearexpiry" placeholder="90" min="1"><p style="font-size:.75rem;color:var(--muted);margin-top:5px">🟡 Yellow warning</p></div>
+        <div class="form-group"><label>High Risk Expiry (days)</label><input type="number" id="setting-highexpiry" placeholder="30" min="1"><p style="font-size:.75rem;color:var(--muted);margin-top:5px">🔴 Red critical</p></div>
+      </div>
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group">
+          <label>Show Batch/Serial Number on Voucher</label>
+          <select id="setting-showserial">
+            <option value="yes">Yes — always show if available</option>
+            <option value="no">No — never show on voucher</option>
+            <option value="ask">Ask me each time</option>
+          </select>
+          <p style="font-size:.75rem;color:var(--muted);margin-top:5px">Controls whether batch/serial numbers print on dispatch vouchers.</p>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group">
+          <label>Label Size</label>
+          <select id="setting-labelsize">
+            <option value="small">Small (5×3 cm)</option>
+            <option value="medium" selected>Medium (7×4 cm)</option>
+            <option value="large">Large (10×6 cm)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Label Font Size</label>
+          <select id="setting-labelfont">
+            <option value="10">Small (10pt)</option>
+            <option value="12" selected>Medium (12pt)</option>
+            <option value="14">Large (14pt)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Label Content</label>
+          <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px">
+            <label style="font-size:.85rem;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="label-show-name" checked style="accent-color:var(--accent);margin-right:6px">Item Name</label>
+            <label style="font-size:.85rem;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="label-show-batch" checked style="accent-color:var(--accent);margin-right:6px">Batch/Serial Number</label>
+            <label style="font-size:.85rem;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="label-show-expiry" checked style="accent-color:var(--accent);margin-right:6px">Expiry Date</label>
+            <label style="font-size:.85rem;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="label-show-org" style="accent-color:var(--accent);margin-right:6px">Organization Name</label>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    </div>
+    <div class="card" style="background:#f0f7f0;border-color:#c8e6c9">
+      <div class="card-title" style="color:#2e7d32">Cross-Device Access</div>
+      <p style="font-size:.9rem;line-height:1.7;color:#333">✅ <strong>Works on any browser, any device.</strong> Just open this HTML file → paste Script URL → all data loads from Google Sheets automatically.</p>
+    </div>
+
+    <!-- BULK IMPORT SHORTCUTS -->
+    <div class="card">
+      <div class="card-title">📥 Bulk Import</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Import large datasets via CSV. Toggle which import panels are visible in their respective tabs, or use the quick-import panels below.</p>
+
+      <!-- Toggle visibility -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+        <div style="font-weight:600;font-size:.88rem;margin-bottom:12px">Show Import Panels in Tabs</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="import-toggle-stock" checked style="accent-color:var(--accent);width:16px;height:16px" onchange="toggleImportPanel('stock-import-card',this.checked)">
+            Stock Import (Stock tab)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="import-toggle-inst" checked style="accent-color:var(--accent);width:16px;height:16px" onchange="toggleImportPanel('inst-import-card',this.checked)">
+            Institutes Import (Institutes tab)
+          </label>
+        </div>
+      </div>
+
+      <!-- Quick import Stock -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+
+        <div class="card" style="margin-bottom:0;border-color:#a5d6a7">
+          <div style="font-weight:600;margin-bottom:8px;font-size:.92rem">📦 Import Stock Items</div>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Columns: name, category, unit, quantity, low_stock, expiry_date</p>
+          <div class="import-area" onclick="document.getElementById('settings-stock-csv').click()" style="padding:16px;margin-bottom:10px">
+            <div style="font-size:1.5rem">📂</div>
+            <div style="font-size:.85rem;font-weight:600;margin-top:6px">Click to upload Stock CSV</div>
+          </div>
+          <input type="file" id="settings-stock-csv" accept=".csv" style="display:none" onchange="handleFileImport(this)">
+          <a href="#" onclick="downloadTemplate(event)" style="font-size:.8rem;color:var(--accent2)">⬇ Download Stock Template</a>
+          <div id="settings-stock-preview" style="display:none;margin-top:10px">
+            <div id="settings-stock-table" class="table-wrap" style="max-height:150px;overflow-y:auto"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-primary btn-sm" onclick="confirmImport()">✓ Import</button>
+              <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border)" onclick="cancelImport()">Cancel</button>
+              <span id="settings-stock-count" style="font-size:.8rem;color:var(--muted);margin-top:6px"></span>
+            </div>
+          </div>
+          <div id="settings-stock-alert" class="alert" style="margin-top:8px"></div>
+        </div>
+
+        <div class="card" style="margin-bottom:0;border-color:#90caf9">
+          <div style="font-weight:600;margin-bottom:8px;font-size:.92rem">🏫 Import Institutes</div>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Columns: name, category, contact, phone, address</p>
+          <div class="import-area" onclick="document.getElementById('settings-inst-csv').click()" style="padding:16px;margin-bottom:10px">
+            <div style="font-size:1.5rem">📂</div>
+            <div style="font-size:.85rem;font-weight:600;margin-top:6px">Click to upload Institutes CSV</div>
+          </div>
+          <input type="file" id="settings-inst-csv" accept=".csv" style="display:none" onchange="handleInstFileImport(this)">
+          <a href="#" onclick="downloadInstTemplate(event)" style="font-size:.8rem;color:var(--accent2)">⬇ Download Institutes Template</a>
+          <div id="settings-inst-preview" style="display:none;margin-top:10px">
+            <div id="settings-inst-table" class="table-wrap" style="max-height:150px;overflow-y:auto"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-primary btn-sm" onclick="confirmInstImport()">✓ Import</button>
+              <button class="btn btn-sm" style="background:var(--surface2);border:1px solid var(--border)" onclick="cancelInstImport()">Cancel</button>
+              <span id="settings-inst-count" style="font-size:.8rem;color:var(--muted);margin-top:6px"></span>
+            </div>
+          </div>
+          <div id="settings-inst-alert" class="alert" style="margin-top:8px"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+<div id="voucher-print"><div class="voucher-box" id="voucher-content"></div></div>
+
