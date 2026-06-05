@@ -66,7 +66,13 @@ async function loadAll(){
   if(!data)return;
   stock=(data.stock||[]).map(s=>({...s,qty:+s.qty,dispatched:+(s.dispatched||0),low:+(s.low||10),showLow:s.showLow!=='false'&&s.showLow!==false}));
   institutes=data.institutes||[];
-  records=(data.records||[]).map(r=>({...r,qty:+r.qty}));
+  records=(data.records||[]).map(r=>({
+  ...r,
+  voucherNo:String(r.voucherNo||''),
+  instId:String(r.instId||''),
+  itemId:String(r.itemId||''),
+  qty:+r.qty
+}));
   adjustments=(data.adjustments||[]).map(a=>({...a,qty:+a.qty,stockAfter:+(a.stockAfter||0)}));
   distTemplates=data.distTemplates||[];
   distAllocations=(data.distAllocations||[]).map(a=>({...a,plannedQty:+a.plannedQty,dispatchedQty:+a.dispatchedQty}));
