@@ -111,7 +111,23 @@ async function submitDispatch(){
   document.getElementById('dispatch-rows').innerHTML='';
   addDispatchRow();
   await loadAll();
-  setTimeout(()=>{try{printVoucher(voucherNo);}catch(e){console.warn('Print error:',e);showAlert('dispatch-alert','error','Voucher saved. Click 🖨 in Records tab to print.');}},600);
+  // Ensure the record actually exists in local state before printing
+  const exists = records.some(r => r.voucherNo === voucherNo);
+  if (exists) {
+    setTimeout(() => {
+      try { printVoucher(voucherNo); } catch(e) { console.warn('Print error:', e); }
+    }, 400);
+  } else {
+    // One more try if data didn't sync fast enough
+    setTimeout(async () => {
+      await loadAll();
+      if (records.some(r => r.voucherNo === voucherNo)) {
+        try { printVoucher(voucherNo); } catch(e) { console.warn('Print error:', e); }
+      } else {
+        showAlert('dispatch-alert', 'info', 'Voucher saved. If print didn\'t open, find it in the Records tab.');
+      }
+    }, 1500);
+  }
 }
 
 async function cancelDispatch(voucherNo){
