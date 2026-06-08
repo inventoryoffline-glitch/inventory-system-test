@@ -61,18 +61,20 @@ async function api(params, allowServerError){
 // ── Load All ───────────────────────────────────────────────────
 async function loadAll(){
   showLoading(true);
+  // Small delay ensures Google Sheets has finished writing if called immediately after POST
+  await new Promise(resolve => setTimeout(resolve, 600));
   const data=await api({action:'getAll'});
   showLoading(false);
   if(!data)return;
   stock=(data.stock||[]).map(s=>({...s,qty:+s.qty,dispatched:+(s.dispatched||0),low:+(s.low||10),showLow:s.showLow!=='false'&&s.showLow!==false}));
   institutes=data.institutes||[];
   records=(data.records||[]).map(r=>({
-  ...r,
-  voucherNo:String(r.voucherNo||''),
-  instId:String(r.instId||''),
-  itemId:String(r.itemId||''),
-  qty:+r.qty
-}));
+    ...r,
+    voucherNo:String(r.voucherNo||''),
+    instId:String(r.instId||''),
+    itemId:String(r.itemId||''),
+    qty:+r.qty
+  }));
   adjustments=(data.adjustments||[]).map(a=>({...a,qty:+a.qty,stockAfter:+(a.stockAfter||0)}));
   distTemplates=data.distTemplates||[];
   distAllocations=(data.distAllocations||[]).map(a=>({...a,plannedQty:+a.plannedQty,dispatchedQty:+a.dispatchedQty}));
