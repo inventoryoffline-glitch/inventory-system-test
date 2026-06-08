@@ -35,30 +35,30 @@ function getPrintStyles(){
 }
 
 function openPrintWindow(htmlBody){
-  // Remove any existing print frame
-  var old=document.getElementById('_printFrame');
-  if(old)old.parentNode.removeChild(old);
+  const printWindow = window.open('', '_blank', 'width=900,height=700');
+  if (!printWindow) {
+    // Fallback to iframe if popup blocked
+    var old=document.getElementById('_printFrame');
+    if(old)old.parentNode.removeChild(old);
+    var full='<!DOCTYPE html><html><head><title>Print</title>'+getPrintStyles()+'</head><body>'+htmlBody+'</body></html>';
+    var frame=document.createElement('iframe');
+    frame.id='_printFrame';
+    frame.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:99999;background:#fff';
+    document.body.appendChild(frame);
+    frame.contentDocument.open();
+    frame.contentDocument.write(full);
+    frame.contentDocument.close();
+    frame.onload=function(){ setTimeout(function(){ try{frame.contentWindow.print();}catch(e){} },500); };
+    return;
+  }
 
-  var full='<!DOCTYPE html><html><head><title>Print</title>'+getPrintStyles()+'</head><body>'+htmlBody+
-    '<div style="text-align:center;margin-top:24px;padding:16px">'+
-    '<button onclick="window.print()" style="padding:10px 24px;background:#2d5016;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer;margin-right:10px">🖨 Print</button>'+
-    '<button onclick="document.getElementById(\'_printFrame\').style.display=\'none\'" style="padding:10px 24px;background:#eee;border:none;border-radius:6px;font-size:1rem;cursor:pointer">✕ Close</button>'+
-    '</div></body></html>';
-
-  var frame=document.createElement('iframe');
-  frame.id='_printFrame';
-  frame.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:99999;background:#fff';
-  document.body.appendChild(frame);
-
-  frame.contentDocument.open();
-  frame.contentDocument.write(full);
-  frame.contentDocument.close();
-
-  // Auto-print after content loads
-  frame.onload=function(){
-    setTimeout(function(){
-      try{frame.contentWindow.print();}catch(e){}
-    },400);
+  const fullHtml = `<!DOCTYPE html><html><head><title>Print Voucher</title>${getPrintStyles()}</head><body>${htmlBody}</body></html>`;
+  printWindow.document.write(fullHtml);
+  printWindow.document.close();
+  printWindow.onload = function() {
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 }
 
@@ -244,3 +244,4 @@ async function updateRecordSerial(recordId,serialNotes){
   showAlert('records-alert','success','Serial/Batch number updated.');
   await loadAll();
 }
+
