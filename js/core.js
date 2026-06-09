@@ -114,6 +114,7 @@ function refreshAll(){
   try{renderReports();}catch(e){console.warn('Reports:',e);}
   try{renderAdjustments();}catch(e){console.warn('Adjustments:',e);}
   try{renderExpiredStock();}catch(e){console.warn('Expired:',e);}
+  try{renderNotesTab();}catch(e){console.warn('Notes:',e);}
   try{renderDistributionCentre();}catch(e){console.warn('Distribution:',e);}
   try{
     const rsel=document.getElementById('remove-item-id');
