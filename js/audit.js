@@ -27,6 +27,20 @@ function runAudit(silent){
   results.push({id:'rec_refs',title:'All Records Have Valid References',status:orphanRecs.length===0?'pass':'warn',detail:orphanRecs.length===0?'All '+records.length+' records reference valid institutes and items.':orphanRecs.length+' records reference deleted institutes or items.'});
   const zeroAllocs=distAllocations.filter(a=>parseInt(a.plannedQty)<=0);
   results.push({id:'zero_allocs',title:'No Zero-Quantity Allocations',status:zeroAllocs.length===0?'pass':'warn',detail:zeroAllocs.length===0?'All allocations have positive planned quantities.':zeroAllocs.length+' allocations have zero or negative planned quantities.'});
+  
+  // NEW CHECKS
+  const thirtyDaysAgo=new Date();thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+  const inactiveInsts=[];
+  institutes.forEach(inst=>{
+    const lastDispatch=records.filter(r=>r.instId==inst.id&&(r.status||'active')==='active').sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    if(!lastDispatch||new Date(lastDispatch.date)<thirtyDaysAgo)inactiveInsts.push(inst.name);
+  });
+  results.push({id:'inst_activity',title:'Institute Activity (Last 30 Days)',status:inactiveInsts.length===0?'pass':'info',detail:inactiveInsts.length===0?'All institutes active in last 30 days.':inactiveInsts.length+' institute(s) inactive: '+inactiveInsts.slice(0,5).join(', ')+(inactiveInsts.length>5?'...':'')});
+  
+  const today=new Date();const expiringDate=new Date();expiringDate.setDate(expiringDate.getDate()+30);
+  const expiringItems=stock.filter(s=>{if(!s.expiry)return false;const ed=new Date(s.expiry);return ed>=today&&ed<=expiringDate&&parseInt(s.qty)>0;});
+  results.push({id:'expiry_trend',title:'Items Expiring in Next 30 Days',status:expiringItems.length===0?'pass':'warn',detail:expiringItems.length===0?'No items expiring soon.':expiringItems.length+' item(s) expiring: '+expiringItems.map(s=>s.name).slice(0,5).join(', ')+(expiringItems.length>5?'...':'')});
+  
   const fails=results.filter(r=>r.status==='fail').length;
   const warns=results.filter(r=>r.status==='warn').length;
   const passes=results.filter(r=>r.status==='pass').length;
@@ -59,7 +73,7 @@ function renderAuditResults(results,fails,warns){
   </div>`;
   const rows=results.map(r=>`
     <div class="audit-row ${r.status}">
-      <div class="audit-icon">${r.status==='pass'?'✅':r.status==='warn'?'⚠️':'❌'}</div>
+      <div class="audit-icon">${r.status==='pass'?'✅':r.status==='warn'?'⚠️':r.status==='info'?'ℹ️':'❌'}</div>
       <div><div class="audit-title">${r.title}</div><div class="${r.status==='fail'?'audit-fail-detail':'audit-detail'}">${r.detail}</div></div>
     </div>`).join('');
   wrap.innerHTML=summary+rows;
