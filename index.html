@@ -38,6 +38,7 @@
   <button class="tab-btn" onclick="switchTab('reports',this)">Reports</button>
   <button class="tab-btn" onclick="switchTab('adjustments',this)">Stock Adjustments</button>
   <button class="tab-btn" onclick="switchTab('expired',this)">⛔ Expired Stock</button>
+  <button class="tab-btn" onclick="switchTab('notes',this)">📝 Institute Notes</button>
   <button class="tab-btn" onclick="switchTab('distribution',this)">📋 Distribution Centre</button>
   <button class="tab-btn" onclick="switchTab('audit',this)">🔍 Audit</button>
   <button class="tab-btn" onclick="switchTab('settings',this)">⚙ Settings</button>
@@ -314,6 +315,23 @@
         <table><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Unit</th><th>Qty</th><th>Batch/Serial</th><th>Expiry Date</th><th>Days Expired</th></tr></thead>
         <tbody id="expired-tbody"><tr><td colspan="8" class="empty-msg">Loading...</td></tr></tbody></table>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- INSTITUTE NOTES -->
+<div id="tab-notes" class="tab-content">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">📝 Institute Notes</div>
+      <div id="notes-alert" class="alert"></div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Select Institute</label>
+        <select id="notes-inst-select" onchange="onNotesInstituteSelect()" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.92rem;background:var(--surface2);color:var(--text);outline:none">
+          <option value="">— Select Institute —</option>
+        </select>
+      </div>
+      <div id="notes-container"><p class="empty-msg">Select an institute to view and add notes.</p></div>
     </div>
   </div>
 </div>
@@ -661,6 +679,7 @@
 <script src="js/alloc-grid.js"></script>
 <script src="js/print.js"></script>
 <script src="js/audit.js"></script>
+<script src="js/notes.js"></script>
 <script src="js/import-export.js"></script>
 </body>
 </html>
