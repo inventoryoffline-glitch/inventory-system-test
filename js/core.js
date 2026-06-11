@@ -80,6 +80,7 @@ async function loadAll(){
   distAllocations=(data.distAllocations||[]).map(a=>({...a,plannedQty:+a.plannedQty,dispatchedQty:+a.dispatchedQty}));
   if(data.settings){settings={...settings,...data.settings};settings.nearExpiry=parseInt(settings.nearExpiry)||90;settings.highExpiry=parseInt(settings.highExpiry)||30;}
   applySettings();refreshAll();
+  try{renderNotesTab();}catch(e){}
   const wsContent=document.getElementById('dc-workspace-content');
   if(wsContent&&wsContent.style.display!=='none'&&activeTemplateId){
     try{renderWorkspace();}catch(e){}
@@ -138,6 +139,7 @@ function switchTab(t,btn){
     if(t==='records')try{renderRecords();}catch(e){}
     if(t==='stock')try{renderStock();}catch(e){}
     if(t==='reports')try{renderReports();}catch(e){}
+    if(t==='notes')try{renderNotesTab();}catch(e){}
   }catch(e){console.warn('switchTab:',e);}
 }
 function dcSwitchTab(t,btn){
@@ -157,7 +159,7 @@ async function saveSettings(){
   const newUrl=document.getElementById('setting-scripturl').value.trim();
   const nearExpiry=parseInt(document.getElementById('setting-nearexpiry').value)||90;
   const highExpiry=parseInt(document.getElementById('setting-highexpiry').value)||30;
-  if(newUrl&&newUrl!==SCRIPT_URL){SCRIPT_URL=newUrl;safeStorage.set('inv_script_url',newUrl);}
+  if(newUrl){SCRIPT_URL=newUrl;safeStorage.set('inv_script_url',newUrl);}
   showLoading(true);
   await api({action:'saveSetting',key:'systemName',value:name});
   await api({action:'saveSetting',key:'issuedBy',value:issuedBy});
