@@ -38,7 +38,6 @@
   <button class="tab-btn" onclick="switchTab('reports',this)">Reports</button>
   <button class="tab-btn" onclick="switchTab('adjustments',this)">Stock Adjustments</button>
   <button class="tab-btn" onclick="switchTab('expired',this)">⛔ Expired Stock</button>
-  <button class="tab-btn" onclick="switchTab('notes',this)">📝 Institute Notes</button>
   <button class="tab-btn" onclick="switchTab('distribution',this)">📋 Distribution Centre</button>
   <button class="tab-btn" onclick="switchTab('audit',this)">🔍 Audit</button>
   <button class="tab-btn" onclick="switchTab('settings',this)">⚙ Settings</button>
@@ -315,23 +314,6 @@
         <table><thead><tr><th>#</th><th>Item</th><th>Category</th><th>Unit</th><th>Qty</th><th>Batch/Serial</th><th>Expiry Date</th><th>Days Expired</th></tr></thead>
         <tbody id="expired-tbody"><tr><td colspan="8" class="empty-msg">Loading...</td></tr></tbody></table>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- INSTITUTE NOTES -->
-<div id="tab-notes" class="tab-content">
-  <div class="container">
-    <div class="card">
-      <div class="card-title">📝 Institute Notes</div>
-      <div id="notes-alert" class="alert"></div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label>Select Institute</label>
-        <select id="notes-inst-select" onchange="onNotesInstituteSelect()" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.92rem;background:var(--surface2);color:var(--text);outline:none">
-          <option value="">— Select Institute —</option>
-        </select>
-      </div>
-      <div id="notes-container"><p class="empty-msg">Select an institute to view and add notes.</p></div>
     </div>
   </div>
 </div>
@@ -664,6 +646,59 @@
   </div>
 </div>
 
+<!-- GLOBAL STICKY NOTES PANEL -->
+<button id="sticky-notes-btn" onclick="toggleStickyPanel()" title="Open Notes & Calculator">📝</button>
+
+<div id="sticky-notes-panel">
+  <div class="sticky-header">
+    <h2>Tools</h2>
+    <button class="sticky-close-btn" onclick="toggleStickyPanel()">✕</button>
+  </div>
+  <div class="sticky-tabs">
+    <button class="sticky-tab-btn active" onclick="switchStickyTab('notes',this)">📝 Notes</button>
+    <button class="sticky-tab-btn" onclick="switchStickyTab('calc',this)">🧮 Calc</button>
+  </div>
+  <div class="sticky-content">
+    <!-- NOTES TAB -->
+    <div id="sticky-notes-tab" class="sticky-tab-content active">
+      <div class="notes-section">
+        <select id="sticky-notes-inst-select" class="notes-inst-select" onchange="onStickyNotesInstituteSelect()">
+          <option value="">— Select Institute —</option>
+        </select>
+        <textarea id="sticky-notes-input" class="notes-input" placeholder="Add a quick note..."></textarea>
+        <button class="notes-btn" onclick="saveStickyNote()">+ Add Note</button>
+        <div id="sticky-notes-list" class="notes-list"></div>
+      </div>
+    </div>
+    <!-- CALCULATOR TAB -->
+    <div id="sticky-calc-tab" class="sticky-tab-content">
+      <div class="calculator-section">
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-buttons">
+          <button class="calc-btn" onclick="calcInput('7')">7</button>
+          <button class="calc-btn" onclick="calcInput('8')">8</button>
+          <button class="calc-btn" onclick="calcInput('9')">9</button>
+          <button class="calc-btn operator" onclick="calcInput('/')">÷</button>
+          <button class="calc-btn" onclick="calcInput('4')">4</button>
+          <button class="calc-btn" onclick="calcInput('5')">5</button>
+          <button class="calc-btn" onclick="calcInput('6')">6</button>
+          <button class="calc-btn operator" onclick="calcInput('*')">×</button>
+          <button class="calc-btn" onclick="calcInput('1')">1</button>
+          <button class="calc-btn" onclick="calcInput('2')">2</button>
+          <button class="calc-btn" onclick="calcInput('3')">3</button>
+          <button class="calc-btn operator" onclick="calcInput('-')">−</button>
+          <button class="calc-btn" onclick="calcInput('0')">0</button>
+          <button class="calc-btn" onclick="calcInput('.')">.</button>
+          <button class="calc-btn operator" onclick="calcInput('%')">%</button>
+          <button class="calc-btn operator" onclick="calcInput('+')">+</button>
+          <button class="calc-btn equals" onclick="calcEquals()">=</button>
+          <button class="calc-btn clear" onclick="calcClear()">C</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 <div id="voucher-print"><div class="voucher-box" id="voucher-content"></div></div>
 
@@ -680,6 +715,7 @@
 <script src="js/print.js"></script>
 <script src="js/audit.js"></script>
 <script src="js/notes.js"></script>
+<script src="js/sticky-panel.js"></script>
 <script src="js/import-export.js"></script>
 </body>
 </html>
