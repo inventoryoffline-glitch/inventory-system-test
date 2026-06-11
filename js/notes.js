@@ -6,15 +6,18 @@ let instituteNotes = {};
 
 async function renderNotesTab() {
   const instSelect = document.getElementById('notes-inst-select');
+  if (!instSelect) return;
   instSelect.innerHTML = '<option value="">— Select Institute —</option>' + 
-    institutes.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+    (institutes || []).map(i => `<option value="${i.id}">${i.name}</option>`).join('');
   
   const notesContainer = document.getElementById('notes-container');
   notesContainer.innerHTML = '<p class="empty-msg">Select an institute above to view and add notes.</p>';
 }
 
 async function onNotesInstituteSelect() {
+  console.log('onNotesInstituteSelect triggered');
   const instId = document.getElementById('notes-inst-select').value;
+  console.log('Selected Institute ID:', instId);
   if (!instId) {
     document.getElementById('notes-container').innerHTML = '<p class="empty-msg">Select an institute to view notes.</p>';
     return;
