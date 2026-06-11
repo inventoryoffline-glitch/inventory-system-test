@@ -81,6 +81,7 @@ async function loadAll(){
   if(data.settings){settings={...settings,...data.settings};settings.nearExpiry=parseInt(settings.nearExpiry)||90;settings.highExpiry=parseInt(settings.highExpiry)||30;}
   applySettings();refreshAll();
   try{renderNotesTab();}catch(e){}
+  try{initStickyPanel();}catch(e){}
   const wsContent=document.getElementById('dc-workspace-content');
   if(wsContent&&wsContent.style.display!=='none'&&activeTemplateId){
     try{renderWorkspace();}catch(e){}
@@ -116,6 +117,7 @@ function refreshAll(){
   try{renderAdjustments();}catch(e){console.warn('Adjustments:',e);}
   try{renderExpiredStock();}catch(e){console.warn('Expired:',e);}
   try{renderNotesTab();}catch(e){console.warn('Notes:',e);}
+  try{renderStickyNotesTab();}catch(e){console.warn('StickyNotes:',e);}
   try{renderDistributionCentre();}catch(e){console.warn('Distribution:',e);}
   try{
     const rsel=document.getElementById('remove-item-id');
