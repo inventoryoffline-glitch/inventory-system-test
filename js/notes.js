@@ -5,13 +5,8 @@
 let instituteNotes = {};
 
 async function renderNotesTab() {
-  const instSelect = document.getElementById('notes-inst-select');
-  if (!instSelect) return;
-  instSelect.innerHTML = '<option value="">— Select Institute —</option>' + 
-    (institutes || []).map(i => `<option value="${i.id}">${i.name}</option>`).join('');
-  
-  const notesContainer = document.getElementById('notes-container');
-  notesContainer.innerHTML = '<p class="empty-msg">Select an institute above to view and add notes.</p>';
+  // Notes tab no longer exists - moved to sticky panel
+  return;
 }
 
 async function onNotesInstituteSelect() {
