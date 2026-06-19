@@ -309,7 +309,7 @@ tr.vgrp-first td{border-top:2px solid #bbb!important}
   <div class="container">
     <div class="card" id="stock-import-card">
       <div class="card-title">Bulk Import Items (CSV)</div>
-      <div class="import-area" id="import-drop" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+<div class="import-area" id="import-drop" onclick="document.getElementById('csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault(); handleDrop(event);">
         <div style="font-size:2rem">📂</div>
         <div style="font-weight:600;margin-top:8px">Click or drag & drop CSV file</div>
         <p>Columns: <strong>name, category, unit, quantity, low_stock, expiry_date</strong> — <a href="#" onclick="downloadTemplate(event)" style="color:var(--accent2)">Download template</a></p>
@@ -398,7 +398,7 @@ tr.vgrp-first td{border-top:2px solid #bbb!important}
   <div class="container">
     <div class="card" id="inst-import-card">
       <div class="card-title">Bulk Import Institutes (CSV)</div>
-      <div class="import-area" id="inst-import-drop" onclick="document.getElementById('inst-csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleInstDrop(event)">
+    <div class="import-area" id="inst-import-drop" onclick="document.getElementById('inst-csv-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault(); handleInstDrop(event);">
         <div style="font-size:2rem">📂</div>
         <div style="font-weight:600;margin-top:8px">Click or drag & drop CSV file</div>
         <p>Columns: <strong>name, category, contact, phone, address</strong> — <a href="#" onclick="downloadInstTemplate(event)" style="color:var(--accent2)">Download template</a></p>
