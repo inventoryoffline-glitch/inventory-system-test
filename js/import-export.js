@@ -3,31 +3,13 @@
 // ============================================================
 
 // ── Stock CSV Import ──────────────────────────────────────────
-window.addEventListener('dragover', function(e) { e.preventDefault(); }, false);
-window.addEventListener('drop', function(e) { e.preventDefault(); }, false);
 function downloadTemplate(e){
   e.preventDefault();
-  const csv='name,category,unit,quantity,low_stock,expiry_date\nExample Item,Medicine,bottles,100,20,2025-12-31';
+  const csv='name,category,unit,quantity,low_stock,expiry_date,serial_type,serial_value,ref_number\nExample Item,Medicine,bottles,100,20,2025-12-31,Batch,B123,REF001';
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='inventory_template.csv';a.click();
 }
-
-function handleDrop(e){
-  e.preventDefault();
-  const dropZone = document.getElementById('import-drop');
-  if (dropZone) dropZone.classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFileImport({ files: [file] });
-}
-
-function handleInstDrop(e){
-  e.preventDefault();
-  const dropZone = document.getElementById('inst-import-drop');
-  if (dropZone) dropZone.classList.remove('drag');
-  const file = e.dataTransfer.files[0];
-  if (file) handleInstFileImport({ files: [file] });
-}
-
-function handleFileImport(input){const file=input.files[0];if(file)handleFileImport({ files: [file] });input.value='';}
+function handleDrop(e){e.preventDefault();document.getElementById('import-drop').classList.remove('drag');const file=e.dataTransfer.files[0];if(file)processImportFile(file);}
+function handleFileImport(input){const file=input.files[0];if(file)processImportFile(file);input.value='';}
 function processImportFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
