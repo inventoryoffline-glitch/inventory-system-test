@@ -80,6 +80,15 @@ async function loadAll(){
   distAllocations=(data.distAllocations||[]).map(a=>({...a,plannedQty:+a.plannedQty,dispatchedQty:+a.dispatchedQty}));
   if(data.settings){settings={...settings,...data.settings};settings.nearExpiry=parseInt(settings.nearExpiry)||90;settings.highExpiry=parseInt(settings.highExpiry)||30;}
   applySettings();refreshAll();
+  
+  // Ensure dispatch form has at least one row
+  try {
+    const rows = document.getElementById('dispatch-rows');
+    if (rows && rows.children.length === 0) {
+      if (typeof addDispatchRow === 'function') addDispatchRow();
+    }
+  } catch(e) {}
+
   try{renderNotesTab();}catch(e){}
   try{initStickyPanel();}catch(e){}
   const wsContent=document.getElementById('dc-workspace-content');
@@ -142,6 +151,13 @@ function switchTab(t,btn){
     if(t==='stock')try{renderStock();}catch(e){}
     if(t==='reports')try{renderReports();}catch(e){}
     if(t==='notes')try{renderNotesTab();}catch(e){}
+    
+    if(t==='dispatch'){
+      const rows = document.getElementById('dispatch-rows');
+      if(rows && rows.children.length === 0){
+        if(typeof addDispatchRow === 'function') addDispatchRow();
+      }
+    }
   }catch(e){console.warn('switchTab:',e);}
 }
 function dcSwitchTab(t,btn){
@@ -200,7 +216,6 @@ function formatDate(d){
   if(!d||d===''||d==='-'||d===null||d===undefined)return'-';
   if(d instanceof Date){
     if(isNaN(d.getTime()))return'-';
-    // Use local date methods for Date objects
     return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
   }
   if(typeof d==='number'){
@@ -210,10 +225,8 @@ function formatDate(d){
   }
   const s=d.toString().trim();
   if(!s||s==='-')return'-';
-  // GS always returns YYYY-MM-DD — split directly, never parse with new Date()
   const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(iso)return iso[3]+'-'+iso[2]+'-'+iso[1];
-  // DD-MM-YYYY already formatted
   if(/^\d{2}-\d{2}-\d{4}$/.test(s))return s;
   return s;
 }
@@ -223,12 +236,10 @@ function exportCSV(rows,filename){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=filename;a.click();
 }
 
-// ── Delegated print button handler ─────────────────────────────
 document.addEventListener('click',function(e){
   var btn=e.target.closest?e.target.closest('.print-voucher-btn'):null;
   if(!btn&&e.target.classList&&e.target.classList.contains('print-voucher-btn'))btn=e.target;
   if(btn){var vNo=btn.getAttribute('data-voucher');if(vNo)printVoucher(vNo);}
 });
 
-// ── Init ─────────────────────────────────────────────────────────
 checkSetup();
